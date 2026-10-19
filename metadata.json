@@ -1,0 +1,8 @@
+{
+  "name": "Pédigree Pigeon Pro - Elghali modèle A4",
+  "description": "Application professionnelle de création, d'édition, d'importation IA et d'impression de pedigrees pour pigeons voyageurs avec Elghali modèle A4, Compuclub et export PDF haute résolution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

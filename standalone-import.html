@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extraction Pédigree Pigeon - Module Ultra-Robuste (Firefox, Safari, Android)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Compression côté client (évite 502 ReadableStream sur Firefox et mobile) -->
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
+  <div class="max-w-4xl mx-auto space-y-6">
+    
+    <!-- En-tête -->
+    <header class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black text-amber-400">Pédigree Pigeon - Importateur IA</h1>
+        <p class="text-sm text-slate-400 mt-1">Extraction complète (G0, G1, G2, G3) sans blocage 502 sur Firefox & Mobile.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <label for="worker_url_input" class="text-xs text-slate-400 whitespace-nowrap">Worker URL :</label>
+        <input 
+          id="worker_url_input" 
+          type="text" 
+          placeholder="https://pedigree-worker.mon-compte.workers.dev"
+          class="text-xs bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white w-64 focus:outline-none focus:border-amber-400"
+        />
+        <button id="save_worker_url_btn" class="text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition-all">
+          Sauvegarder
+        </button>
+      </div>
+    </header>
+
+    <!-- Zone de téléversement -->
+    <section class="bg-slate-800/90 p-6 rounded-2xl border border-slate-700 shadow-xl">
+      <h2 class="text-lg font-bold text-white mb-3">1. Importer un document (PDF, JPG, PNG)</h2>
+      
+      <div class="border-2 border-dashed border-slate-600 hover:border-amber-400 transition-colors rounded-xl p-8 text-center cursor-pointer relative" id="drop_zone">
+        <input 
+          type="file" 
+          id="file_input" 
+          accept=".pdf,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf"
+          class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+        <div class="space-y-2 pointer-events-none">
+          <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl mx-auto flex items-center justify-center text-2xl font-bold">📄</div>
+          <p class="text-sm font-semibold text-slate-200">Cliquez ou glissez votre pedigree ici</p>
+          <p class="text-xs text-slate-400">Format PDF ou Image (JPG, PNG). La compression se fait automatiquement avant l'envoi.</p>
+        </div>
+      </div>
+
+      <!-- Indicateur d'état & Erreurs -->
+      <div id="status_box" class="hidden mt-4 p-4 rounded-xl text-sm font-medium"></div>
+    </section>
+
+    <!-- Formulaire de correction pré-rempli -->
+    <section id="form_section" class="hidden bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+        <div>
+          <h2 class="text-lg font-bold text-white">2. Vérification et validation des données extraites</h2>
+          <p class="text-xs text-slate-400">Les champs surlignés en rouge doivent obligatoirement être renseignés.</p>
+        </div>
+        <button id="save_btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg transition-all">
+          ✓ Enregistrer et Valider
+        </button>
+      </div>
+
+      <!-- G0 : Pigeon principal -->
+      <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 space-y-4">
+        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Pigeon Principal (G0)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Nom du pigeon *</label>
+            <input type="text" id="pigeon_nom" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Numéro de bague *</label>
+            <input type="text" id="pigeon_numero_bague" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Sexe (M / F) *</label>
+            <select id="pigeon_sexe" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none">
+              <option value="M">Mâle (M)</option>
+              <option value="F">Femelle (F)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Race / Lignée *</label>
+            <input type="text" id="pigeon_race" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Année / Naissance *</label>
+            <input type="text" id="pigeon_date_naissance" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Couleur</label>
+            <input type="text" id="pigeon_couleur" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none" />
+          </div>
+        </div>
+      </div>
+
+      <!-- G1 : Parents -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Père -->
+        <div class="bg-blue-950/20 p-4 rounded-xl border border-blue-900/40 space-y-3">
+          <h4 class="text-xs font-bold text-blue-400 uppercase">Père (G1 - Mâle)</h4>
+          <input type="text" id="pere_nom" placeholder="Nom du père" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+          <input type="text" id="pere_bague" placeholder="Numéro de bague du père" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono" />
+          <input type="text" id="pere_race" placeholder="Race / Origine" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+          <textarea id="pere_resultats" placeholder="Palmarès / Résultats..." rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+        </div>
+        <!-- Mère -->
+        <div class="bg-rose-950/20 p-4 rounded-xl border border-rose-900/40 space-y-3">
+          <h4 class="text-xs font-bold text-rose-400 uppercase">Mère (G1 - Femelle)</h4>
+          <input type="text" id="mere_nom" placeholder="Nom de la mère" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+          <input type="text" id="mere_bague" placeholder="Numéro de bague de la mère" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono" />
+          <input type="text" id="mere_race" placeholder="Race / Origine" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+          <textarea id="mere_resultats" placeholder="Palmarès / Résultats..." rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+        </div>
+      </div>
+
+      <!-- G2 : Grands-Parents (4 cases) -->
+      <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 space-y-3">
+        <h4 class="text-xs font-bold text-amber-400 uppercase">Grands-Parents (G2 - 4 Ancêtres)</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+            <span class="text-[10px] text-blue-400 font-bold">1. Grand-Père Paternel</span>
+            <input type="text" id="gp_pp_bague" placeholder="Bague" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono" />
+            <input type="text" id="gp_pp_nom" placeholder="Nom" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white" />
+          </div>
+          <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+            <span class="text-[10px] text-rose-400 font-bold">2. Grand-Mère Paternelle</span>
+            <input type="text" id="gp_pm_bague" placeholder="Bague" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono" />
+            <input type="text" id="gp_pm_nom" placeholder="Nom" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white" />
+          </div>
+          <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+            <span class="text-[10px] text-blue-400 font-bold">3. Grand-Père Maternel</span>
+            <input type="text" id="gp_mp_bague" placeholder="Bague" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono" />
+            <input type="text" id="gp_mp_nom" placeholder="Nom" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white" />
+          </div>
+          <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+            <span class="text-[10px] text-rose-400 font-bold">4. Grand-Mère Maternelle</span>
+            <input type="text" id="gp_mm_bague" placeholder="Bague" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono" />
+            <input type="text" id="gp_mm_nom" placeholder="Nom" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Détails élevage -->
+      <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Nom de l'éleveur</label>
+          <input type="text" id="details_nom_eleveur" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Adresse / Ville</label>
+          <input type="text" id="details_adresse_eleveur" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Club / Société</label>
+          <input type="text" id="details_club" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" />
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/script.js"></script>
+  <script>
+    const workerInput = document.getElementById('worker_url_input');
+    const saveWorkerBtn = document.getElementById('save_worker_url_btn');
+    const fileInput = document.getElementById('file_input');
+    const statusBox = document.getElementById('status_box');
+    const formSection = document.getElementById('form_section');
+    const saveBtn = document.getElementById('save_btn');
+
+    // Charger l'URL configurée
+    const savedUrl = localStorage.getItem('CF_WORKER_PEDIGREE_URL');
+    if (savedUrl) workerInput.value = savedUrl;
+
+    saveWorkerBtn.addEventListener('click', () => {
+      const val = workerInput.value.trim();
+      if (val) {
+        localStorage.setItem('CF_WORKER_PEDIGREE_URL', val);
+        alert('URL du Cloudflare Worker enregistrée !');
+      } else {
+        localStorage.removeItem('CF_WORKER_PEDIGREE_URL');
+        alert('URL réinitialisée sur l\'API locale.');
+      }
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      statusBox.className = 'p-4 rounded-xl text-sm font-medium bg-blue-900/40 text-blue-300 border border-blue-700 block';
+      statusBox.textContent = '⏳ Étape 1/2 : Compression intelligente de l\'image côté client...';
+      formSection.classList.add('hidden');
+
+      try {
+        const compressedFile = await window.PedigreeExtractor.compressImageFile(file);
+        
+        statusBox.textContent = '⏳ Étape 2/2 : Extraction IA de toutes les générations via Cloudflare / Gemini...';
+
+        const workerUrl = workerInput.value.trim() || '/api/extract-pedigree';
+        const data = await window.PedigreeExtractor.sendToWorker(compressedFile, workerUrl);
+
+        statusBox.className = 'p-4 rounded-xl text-sm font-medium bg-emerald-900/40 text-emerald-300 border border-emerald-700 block';
+        statusBox.textContent = '✓ Extraction réussie ! Vérifiez les informations ci-dessous.';
+
+        window.PedigreeExtractor.populateCorrectionForm(data);
+        formSection.classList.remove('hidden');
+      } catch (err) {
+        statusBox.className = 'p-4 rounded-xl text-sm font-medium bg-red-900/40 text-red-300 border border-red-700 block';
+        statusBox.textContent = '❌ Erreur : ' + (err.message || 'Échec de l\'extraction.');
+        // Proposer la saisie manuelle si échec
+        formSection.classList.remove('hidden');
+      }
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const nom = document.getElementById('pigeon_nom').value.trim();
+      const bague = document.getElementById('pigeon_numero_bague').value.trim();
+      if (!nom || !bague) {
+        alert('Veuillez renseigner le nom et le numéro de bague du pigeon (champs en rouge).');
+        return;
+      }
+      alert('✓ Données du pedigree validées avec succès !');
+    });
+  </script>
+</body>
+</html>

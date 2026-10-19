@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "project": {
+      "title": "Project",
+      "description": "Pedigree project representing a pigeon pedigree tree",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique identifier of the pedigree project"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the project owner"
+        },
+        "ring": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Main pigeon ring number"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name or title of the pedigree"
+        },
+        "pigeons": {
+          "type": "array",
+          "description": "List of pigeon data entries for the 31 tree boxes"
+        },
+        "ownerName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Breeder or owner name"
+        },
+        "ownerDetails": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Contact or loft details"
+        },
+        "logo": {
+          "type": "string",
+          "maxLength": 500000,
+          "description": "SVG or image data URL for loft logo"
+        },
+        "theme": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Selected pedigree theme layout"
+        },
+        "textSize": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Text size configuration"
+        },
+        "showOwnerFooter": {
+          "type": "boolean",
+          "description": "Whether to render footer with owner details"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Creation timestamp ISO string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Last update timestamp ISO string"
+        }
+      },
+      "required": ["id", "userId", "ring", "pigeons", "createdAt", "updatedAt"]
+    },
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "User display name"
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "User avatar photo URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Creation timestamp ISO string"
+        }
+      },
+      "required": ["userId", "email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": "project",
+      "description": "Pedigree projects saved by users"
+    },
+    "/users/{userId}": {
+      "schema": "userProfile",
+      "description": "User profile information"
+    }
+  }
+}

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pédigree Pigeon Pro - Elghali modèle A4</title>
+    <meta name="description" content="Application professionnelle de création, d'édition, d'importation IA et d'impression de pedigrees pour pigeons voyageurs avec Elghali modèle A4, Compuclub et export PDF." />
+    <meta property="og:title" content="Pédigree Pigeon Pro - Elghali modèle A4" />
+    <meta property="og:description" content="Application professionnelle de création, d'édition, d'importation IA et d'impression de pedigrees pour pigeons voyageurs avec Elghali modèle A4, Compuclub et export PDF." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      (function () {
+        if (typeof globalThis === 'undefined') return;
+        if (typeof globalThis.Intl === 'undefined') globalThis.Intl = {};
+        var NativeSeg = typeof globalThis.Intl.Segmenter === 'function' ? globalThis.Intl.Segmenter : null;
+        function fallbackSeg(input, granularity) {
+          var str = String(input == null ? '' : input);
+          var chunks = [];
+          if (granularity === 'word') {
+            chunks = str.match(/(\s+|[a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\u0600-\u06FF_]+|[^\s\da-zA-Z\u00C0-\u024F\u0400-\u04FF\u0600-\u06FF_]+)/g) || (str.length ? [str] : []);
+          } else if (granularity === 'sentence') {
+            chunks = str.match(/[^.!?]+[.!?]*\s*/g) || (str.length ? [str] : []);
+          } else {
+            var cps = Array.from(str);
+            for (var i = 0; i < cps.length; i++) {
+              var cp = cps[i];
+              while (i + 1 < cps.length && /^[\u0300-\u036F\uFE00-\uFE0F\u200D]$/.test(cps[i + 1])) {
+                cp += cps[i + 1];
+                i++;
+              }
+              chunks.push(cp);
+            }
+          }
+          if (chunks.join('') !== str) chunks = Array.from(str);
+          var segs = [];
+          var off = 0;
+          for (var j = 0; j < chunks.length; j++) {
+            var s = chunks[j];
+            segs.push({ segment: s, index: off, input: str, isWordLike: granularity === 'word' ? /[a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\u0600-\u06FF_]/.test(s) : undefined });
+            off += s.length;
+          }
+          return {
+            [Symbol.iterator]: function () { return segs[Symbol.iterator](); },
+            containing: function (idx) {
+              var n = Number(idx) || 0;
+              for (var k = 0; k < segs.length; k++) {
+                if (n >= segs[k].index && n < segs[k].index + segs[k].segment.length) return segs[k];
+              }
+              return undefined;
+            }
+          };
+        }
+        function SafeSegmenter(locales, options) {
+          var raw = Array.isArray(locales) ? locales[0] : locales;
+          this.locale = typeof raw === 'string' && raw.trim() ? raw.trim() : 'fr';
+          this.granularity = (options && options.granularity) || 'grapheme';
+          this.nativeInstance = null;
+          if (NativeSeg) {
+            try { this.nativeInstance = new NativeSeg(this.locale, { granularity: this.granularity }); }
+            catch (e) {
+              try { this.nativeInstance = new NativeSeg('en', { granularity: this.granularity }); }
+              catch (e2) { this.nativeInstance = null; }
+            }
+          }
+        }
+        SafeSegmenter.prototype.segment = function (input) {
+          if (this.nativeInstance) {
+            try {
+              var r = this.nativeInstance.segment(String(input == null ? '' : input));
+              if (r && typeof r[Symbol.iterator] === 'function') return r;
+            } catch (e) {}
+          }
+          return fallbackSeg(input, this.granularity);
+        };
+        SafeSegmenter.prototype.resolvedOptions = function () {
+          return { locale: this.locale, granularity: this.granularity };
+        };
+        SafeSegmenter.supportedLocalesOf = function (l) {
+          return Array.isArray(l) ? l : l ? [l] : [];
+        };
+        try {
+          globalThis.Intl.Segmenter = SafeSegmenter;
+          globalThis.Intl.__safeSegmenterInstalled = true;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

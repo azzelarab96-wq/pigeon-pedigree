@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'email', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'email', 'displayName', 'photoURL', 'createdAt'])
+        && data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid
+        && data.email is string && data.email.size() <= 200
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+        && data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'userId', 'ring', 'pigeons', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'userId', 'ring', 'name', 'pigeons', 'ownerName', 'ownerDetails', 'logo', 'theme', 'textSize', 'showOwnerFooter', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid
+        && data.ring is string && data.ring.size() <= 100
+        && (!('name' in data) || (data.name is string && data.name.size() <= 100))
+        && data.pigeons is list && data.pigeons.size() <= 35
+        && (!('ownerName' in data) || (data.ownerName is string && data.ownerName.size() <= 120))
+        && (!('ownerDetails' in data) || (data.ownerDetails is string && data.ownerDetails.size() <= 300))
+        && (!('logo' in data) || (data.logo is string && data.logo.size() <= 500000))
+        && (!('theme' in data) || (data.theme is string && data.theme.size() <= 30))
+        && (!('textSize' in data) || (data.textSize is string && data.textSize.size() <= 30))
+        && (!('showOwnerFooter' in data) || (data.showOwnerFooter is bool))
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && data.updatedAt is string && data.updatedAt.size() <= 50;
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming())
+                    && incoming().userId == existing().userId
+                    && incoming().createdAt == existing().createdAt;
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // Pedigree Projects
+    match /projects/{projectId} {
+      allow get: if isSignedIn() && isValidId(projectId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(projectId) && isValidProject(incoming());
+      allow update: if isSignedIn() && isValidId(projectId) && isValidProject(incoming())
+                    && existing().userId == request.auth.uid
+                    && incoming().userId == existing().userId
+                    && incoming().id == existing().id
+                    && incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && isValidId(projectId) && resource.data.userId == request.auth.uid;
+    }
+  }
+}
